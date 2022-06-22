@@ -77,6 +77,55 @@ def sort_popular_hours(hours)
   end
 end
 
+def fill_days_array(regdate, days)
+  month = regdate[0].to_i
+  day = regdate[1].to_i
+  year = regdate[2].to_i
+
+  days << Date.new(year, month, day).wday
+end
+
+def sort_popular_days(days)
+  days = days.map do |day|
+    case day 
+    when 0
+      day = "Sunday"
+    when 1
+      day = "Monday"
+    when 2
+      day = "Tuesday"
+    when 3
+      day = "Wednesday"
+    when 4
+      day = "Thursday"
+    when 5
+      day = "Friday"
+    when 6
+      day = "Saturday"
+    else
+      next
+    end
+  end
+  
+  days = days.reduce(Hash.new(0)) do |total, day|
+    if total[day] == nil
+      total[day] = 0
+    end
+    total[day] += 1
+    total
+  end
+  
+  days = days.sort_by {|day, total| total}.reverse
+
+  highest_reg = days[0][1]
+
+  days.each do |day|
+    if day[1] == highest_reg
+      puts "#{day[0]} is the most popular day..."
+    end
+  end
+end
+
 puts 'EventManager initialized.'
 
 contents = CSV.open(
@@ -89,6 +138,7 @@ template_letter = File.read('form_letter.erb')
 erb_template = ERB.new template_letter
 
 hours = []
+days = []
 
 contents.each do |row|
   id = row[0]
@@ -99,8 +149,11 @@ contents.each do |row|
 
   create_hours_array(row[:regdate].split, hours)
 
+  fill_days_array(row[:regdate].split(" ")[0].split("/"), days)
+
   form_letter = erb_template.result(binding)
   save_thank_you_letter(id,form_letter)
 end
 
 sort_popular_hours(hours)
+sort_popular_days(days)
