@@ -55,6 +55,28 @@ def save_thank_you_letter(id,form_letter)
   end
 end
 
+def create_hours_array(dates, hours)
+  hours << dates[1].split(":")[0].to_i
+end
+
+def sort_popular_hours(hours)
+  popular_hours = hours.reduce(Hash.new(0)) do |total, hour|
+    if total[hour] == nil
+      total[hour] == 0
+    end
+    total[hour] += 1
+    total
+  end
+  popular_hours = popular_hours.sort_by {|hour, count| count}.reverse
+
+  highest_reg = popular_hours[0][1]
+  popular_hours.each do |hours|
+    if hours[1] == highest_reg
+      puts "Hour #{hours[0]} is most popular..."
+    end
+  end
+end
+
 puts 'EventManager initialized.'
 
 contents = CSV.open(
@@ -66,6 +88,8 @@ contents = CSV.open(
 template_letter = File.read('form_letter.erb')
 erb_template = ERB.new template_letter
 
+hours = []
+
 contents.each do |row|
   id = row[0]
   name = row[:first_name]
@@ -73,6 +97,10 @@ contents.each do |row|
   legislators = legislators_by_zipcode(zipcode)
   phone = clean_phone_number(row[:homephone])
 
+  create_hours_array(row[:regdate].split, hours)
+
   form_letter = erb_template.result(binding)
   save_thank_you_letter(id,form_letter)
 end
+
+sort_popular_hours(hours)
